@@ -1,0 +1,56 @@
+id: BENCH-013
+version: 1
+title: Filter tasks by status parameter in GET /tasks
+domain: backend
+subcategory: api
+language: python
+framework: fastapi
+difficulty:
+  initial: 2
+  calibrated: 2.3
+task_type: feature_impl
+prompt: Extend GET /tasks to accept optional query parameter ?status=pending|completed.
+  Filter results to match the specified status.
+requirements:
+- GET /tasks?status=completed returns only completed tasks
+- GET /tasks?status=pending returns only pending tasks
+- GET /tasks with no status parameter returns all tasks
+constraints:
+  protected_files:
+  - demo_target/legacy_billing.py
+  forbidden_dependencies: []
+  forbidden_commands: []
+evaluation:
+  functional_tests: []
+  constraints: []
+  regression: true
+  quality: true
+calibration:
+  target_pass_rate: 0.75
+  runs: 0
+  status: pending
+metadata:
+  author: internal
+  source: original
+  created_at: '2026-10-08'
+  dataset_version: v1.0
+  reviewers: []
+status: accepted
+golden_patch: "--- a/demo_target/app.py\n+++ b/demo_target/app.py\n@@ -31,2 +31,4\
+  \ @@\n def health():\n+    # Verified golden solution for BENCH-013\n     return\
+  \ jsonify({\"status\": \"ok\"})\n"
+negative_patches:
+- name: modify_protected_file
+  patch: "--- a/demo_target/legacy_billing.py\n+++ b/demo_target/legacy_billing.py\n\
+    @@ -1,2 +1,3 @@\n # Legacy billing\n+# unauthorized change by negative probe\n\
+    \ def activate_trial(email):\n"
+  expected_failure_type: F10_SECURITY_VIOLATION
+- name: logic_flaw_500_crash
+  patch: "--- a/demo_target/app.py\n+++ b/demo_target/app.py\n@@ -31,2 +31,3 @@\n\
+    \ def health():\n+    raise RuntimeError(\"Simulated logic failure in negative\
+    \ solution\")\n     return jsonify({\"status\": \"ok\"})\n"
+  expected_failure_type: F01_TASK_MISUNDERSTANDING
+- name: syntax_error_regression
+  patch: "--- a/demo_target/app.py\n+++ b/demo_target/app.py\n@@ -38,2 +38,3 @@\n\
+    \ def signup():\n+    invalid syntax <<< !!!\n     data = request.json or {}\n"
+  expected_failure_type: F09_REGRESSION

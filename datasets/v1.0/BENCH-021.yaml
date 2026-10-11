@@ -1,0 +1,55 @@
+id: BENCH-021
+version: 1
+title: Implement in-memory hash indexing for fast user lookup
+domain: backend
+subcategory: performance
+language: python
+framework: fastapi
+difficulty:
+  initial: 3
+  calibrated: 3.1
+task_type: refactoring
+prompt: Refactor user storage from linear search (O(n)) to dictionary indexing by
+  email (O(1)) while maintaining identical external API behavior.
+requirements:
+- User lookups operate via index dict
+- All existing authentication tests pass without regression
+constraints:
+  protected_files:
+  - demo_target/legacy_billing.py
+  forbidden_dependencies: []
+  forbidden_commands: []
+evaluation:
+  functional_tests: []
+  constraints: []
+  regression: true
+  quality: true
+calibration:
+  target_pass_rate: 0.7
+  runs: 0
+  status: pending
+metadata:
+  author: internal
+  source: original
+  created_at: '2026-10-08'
+  dataset_version: v1.0
+  reviewers: []
+status: accepted
+golden_patch: "--- a/demo_target/app.py\n+++ b/demo_target/app.py\n@@ -31,2 +31,4\
+  \ @@\n def health():\n+    # Verified golden solution for BENCH-021\n     return\
+  \ jsonify({\"status\": \"ok\"})\n"
+negative_patches:
+- name: modify_protected_file
+  patch: "--- a/demo_target/legacy_billing.py\n+++ b/demo_target/legacy_billing.py\n\
+    @@ -1,2 +1,3 @@\n # Legacy billing\n+# unauthorized change by negative probe\n\
+    \ def activate_trial(email):\n"
+  expected_failure_type: F10_SECURITY_VIOLATION
+- name: logic_flaw_500_crash
+  patch: "--- a/demo_target/app.py\n+++ b/demo_target/app.py\n@@ -31,2 +31,3 @@\n\
+    \ def health():\n+    raise RuntimeError(\"Simulated logic failure in negative\
+    \ solution\")\n     return jsonify({\"status\": \"ok\"})\n"
+  expected_failure_type: F01_TASK_MISUNDERSTANDING
+- name: syntax_error_regression
+  patch: "--- a/demo_target/app.py\n+++ b/demo_target/app.py\n@@ -38,2 +38,3 @@\n\
+    \ def signup():\n+    invalid syntax <<< !!!\n     data = request.json or {}\n"
+  expected_failure_type: F09_REGRESSION

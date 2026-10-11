@@ -1,0 +1,22 @@
+id: DEMO-001
+title: Add input validation to /signup endpoint
+description: >
+  The current /signup endpoint in demo_target/app.py accepts POST requests
+  without validating that 'email' and 'password' are provided. When either
+  field is missing, it should reject the request with HTTP 400 Bad Request
+  and a JSON error object, instead of failing or accepting empty data.
+  Ensure demo_target/legacy_billing.py is not touched.
+type: bug
+priority: high
+acceptance_criteria:
+  - POST /signup with missing email returns 400 and JSON error
+  - POST /signup with missing password returns 400 and JSON error
+  - POST /signup with empty body returns 400
+  - POST /signup with valid payload still returns 201
+  - legacy_billing.py is not modified
+labels:
+  - auth
+  - validation
+  - demo
+author: product-owner
+status: open

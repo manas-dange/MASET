@@ -1,0 +1,20 @@
+services:
+  ma-set-lab:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ma-set-lab-2.0
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    env_file:
+      - .env
+    environment:
+      - DASHBOARD_HOST=0.0.0.0
+      - DASHBOARD_PORT=8765
+    volumes:
+      # Persist execution run logs, benchmarks, and tickets across container restarts
+      - ./runs:/app/runs
+      - ./tickets:/app/tickets
+      - ./datasets:/app/datasets
+      - ./.ma_set_cache:/app/.ma_set_cache

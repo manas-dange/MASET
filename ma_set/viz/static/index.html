@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MA-SET Lab 2.0 — Multi-Agent Software Engineering Team & Evaluation Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css?v=4.0">
+</head>
+<body class="bold-type-theme">
+  <!-- Subtle Noise Grain Texture Overlay -->
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- Header / Navigation -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-logo">
+        <svg class="icon-brand" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+        <div class="pulse-ring"></div>
+      </div>
+      <div class="brand-text">
+        <div class="brand-title-row">
+          <h1 class="brand-title">MA-SET Lab</h1>
+          <span class="version-tag">2.0</span>
+          <span class="idef0-pill">IDEF0 Modeled</span>
+        </div>
+        <p class="brand-subtitle">Autonomous SWE Multi-Agent Team & Frontier Evaluation Platform</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Ticket Selection -->
+      <div class="control-group">
+        <label for="ticket-select" class="control-label">Target Ticket</label>
+        <select id="ticket-select" class="select-input">
+          <option value="" disabled selected>Loading tickets...</option>
+        </select>
+      </div>
+
+      <!-- Saved Run Selection -->
+      <div class="control-group">
+        <label for="run-select" class="control-label">Audit Log</label>
+        <select id="run-select" class="select-input">
+          <option value="" selected>Latest Active / Replay</option>
+        </select>
+      </div>
+
+      <!-- Execution Engine (Stub vs Gemini) -->
+      <div class="control-group">
+        <label for="provider-select" class="control-label">Execution Engine</label>
+        <select id="provider-select" class="select-input">
+          <option value="gemini" selected>Gemini 2.5 Flash (Live API)</option>
+          <option value="stub">Stub Mode (Offline / Simulated)</option>
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button id="btn-run" class="btn btn-primary" title="Execute Multi-Agent Pipeline">
+          <svg class="btn-svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+          <span>Run Pipeline</span>
+        </button>
+        <button id="btn-replay" class="btn btn-secondary" title="Replay Stored Audit Run">
+          <svg class="btn-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/></svg>
+          <span>Replay</span>
+        </button>
+      </div>
+
+      <!-- Playback Speed -->
+      <div class="speed-control">
+        <span class="speed-label">Speed</span>
+        <div class="speed-pills">
+          <button class="speed-pill" data-speed="0.5">0.5x</button>
+          <button class="speed-pill active" data-speed="1.0">1x</button>
+          <button class="speed-pill" data-speed="2.0">2x</button>
+          <button class="speed-pill" data-speed="5.0">5x</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI Metrics Banner -->
+  <section class="kpi-banner">
+    <!-- Status Card -->
+    <div class="kpi-card" id="kpi-status-card">
+      <div class="kpi-header">
+        <div class="kpi-icon-wrap">
+          <svg class="kpi-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span class="kpi-label">Pipeline State</span>
+        </div>
+        <span class="status-indicator" id="status-indicator"></span>
+      </div>
+      <div class="kpi-value" id="kpi-status">IDLE</div>
+      <div class="kpi-subtext" id="kpi-run-id">Awaiting execution</div>
+    </div>
+
+    <!-- Budget Meter Card -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-icon-wrap">
+          <svg class="kpi-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+          <span class="kpi-label">LLM Budget Meter</span>
+        </div>
+        <span class="kpi-cap" id="kpi-budget-cap">Max: 20</span>
+      </div>
+      <div class="kpi-value" id="kpi-llm-calls">0 <span class="unit">calls used</span></div>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="budget-progress" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <!-- Safety Containment Card -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-icon-wrap">
+          <svg class="kpi-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="3"/></svg>
+          <span class="kpi-label">Containment Shield</span>
+        </div>
+        <span class="shield-badge">PathFilter Active</span>
+      </div>
+      <div class="safety-pills">
+        <span class="safety-chip chip-green" title="Main branch is strictly read-only">Main: Protected</span>
+        <span class="safety-chip chip-green" id="chip-legacy-protection" title="legacy_billing.py protection">Billing: Untouched</span>
+        <span class="safety-chip chip-green" id="chip-gate-status" title="Regression Gate status">Gate: 0 Defects</span>
+      </div>
+      <div class="kpi-subtext" id="kpi-safety-subtext">Isolated Git Workspace</div>
+    </div>
+
+    <!-- Loops & Retries Card -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-icon-wrap">
+          <svg class="kpi-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span class="kpi-label">Feedback Loops</span>
+        </div>
+        <span class="kpi-cap">Cap: 3/loop</span>
+      </div>
+      <div class="loop-counters">
+        <div class="counter-item">
+          <span class="counter-tag">FB1 (Dev↔Test)</span>
+          <span class="counter-num" id="cnt-fb1">0 / 3</span>
+        </div>
+        <div class="counter-item">
+          <span class="counter-tag">FB2 (Rev↔Dev)</span>
+          <span class="counter-num" id="cnt-fb2">0 / 3</span>
+        </div>
+      </div>
+      <div class="kpi-subtext" id="cnt-events-total">0 events in stream</div>
+    </div>
+  </section>
+
+  <!-- IDEF0 Multi-Agent Function Architecture Section -->
+  <section class="pipeline-graph-section">
+    <div class="section-header">
+      <div class="idef0-title-block">
+        <div class="idef0-callout">DIAGRAM: A0 &bull; CONTEXT ARCHITECTURE</div>
+        <h2 class="section-title">IDEF0 Multi-Agent Pipeline Map</h2>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="dot dot-pending"></span> Idle</span>
+        <span class="legend-item"><span class="dot dot-active"></span> Executing</span>
+        <span class="legend-item"><span class="dot dot-completed"></span> Verified</span>
+        <span class="legend-item"><span class="dot dot-escalated"></span> Guard Blocked</span>
+      </div>
+    </div>
+
+    <!-- IDEF0 ICOM Container -->
+    <div class="idef0-canvas-card">
+      <!-- Top: Controls (C) Header Bar -->
+      <div class="icom-bar icom-controls-bar">
+        <div class="icom-label"><span class="icom-tag">C</span> CONTROLS (Governance Policies & Invariants)</div>
+        <div class="icom-items">
+          <span class="icom-badge">C1: PathFilter Containment</span>
+          <span class="icom-badge">C2: Budget Cap (20 Calls)</span>
+          <span class="icom-badge">C3: Human Impact Sign-Off</span>
+          <span class="icom-badge">C4: Zero-Defect Gate</span>
+        </div>
+      </div>
+
+      <!-- Main Flow with Function Boxes & Feedback Connections -->
+      <div class="idef0-flow-body">
+        <!-- Left: Input Indicator -->
+        <div class="icom-port-left">
+          <div class="icom-tag">I</div>
+          <div class="icom-port-text">
+            <span>I1: Ticket Spec</span>
+            <span>I2: Repo Context</span>
+          </div>
+          <div class="icom-arrow-right">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="0" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+          </div>
+        </div>
+
+        <!-- Node A1: Planner -->
+        <div class="pipeline-node idef0-box" id="node-planner" data-agent="planner">
+          <div class="idef0-box-header">
+            <span class="node-id">A1</span>
+            <span class="node-badge">Idle</span>
+          </div>
+          <div class="node-title">Planner</div>
+          <div class="node-role">Ticket Breakdown</div>
+          <div class="idef0-icom-hints">
+            <span class="hint-in">In: Ticket</span>
+            <span class="hint-out">Out: Subtasks</span>
+          </div>
+        </div>
+
+        <div class="flow-arrow-svg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="2" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+        </div>
+
+        <!-- Node A2: Architect -->
+        <div class="pipeline-node idef0-box" id="node-architect" data-agent="architect">
+          <div class="idef0-box-header">
+            <span class="node-id">A2</span>
+            <span class="node-badge">Idle</span>
+          </div>
+          <div class="node-title">Architect</div>
+          <div class="node-role">Impact Analysis</div>
+          <div class="idef0-icom-hints">
+            <span class="hint-in">In: Subtasks</span>
+            <span class="hint-out">Out: Spec</span>
+          </div>
+        </div>
+
+        <div class="flow-arrow-svg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="2" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+        </div>
+
+        <!-- Human Gate G1 -->
+        <div class="pipeline-node gate-node idef0-box" id="node-human_gate" data-agent="human_gate">
+          <div class="idef0-box-header">
+            <span class="node-id">GATE 1</span>
+            <span class="node-badge">Ready</span>
+          </div>
+          <div class="node-title">Impact Gate</div>
+          <div class="node-role">Human Approval</div>
+          <div class="idef0-icom-hints">
+            <span class="hint-ctrl">Ctrl: Sign-Off</span>
+          </div>
+        </div>
+
+        <div class="flow-arrow-svg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="2" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+        </div>
+
+        <!-- Node A3: Developer -->
+        <div class="pipeline-node idef0-box" id="node-developer" data-agent="developer">
+          <div class="idef0-box-header">
+            <span class="node-id">A3</span>
+            <span class="node-badge">Idle</span>
+          </div>
+          <div class="node-title">Developer</div>
+          <div class="node-role">Sandbox Patch</div>
+          <div class="idef0-icom-hints">
+            <span class="hint-in">In: Spec &amp; FB</span>
+            <span class="hint-out">Out: Diff</span>
+          </div>
+        </div>
+
+        <!-- FB1 Connector: Dev <-> Tester -->
+        <div class="fb-connector" title="Feedback Loop 1 (Dev &harr; Test)">
+          <div class="flow-arrow-svg">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="2" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+          </div>
+          <span class="fb-indicator-tag">FB1</span>
+        </div>
+
+        <!-- Node A4: Tester -->
+        <div class="pipeline-node idef0-box" id="node-tester" data-agent="tester">
+          <div class="idef0-box-header">
+            <span class="node-id">A4.1</span>
+            <span class="node-badge">Idle</span>
+          </div>
+          <div class="node-title">Tester</div>
+          <div class="node-role">Pytest Suite</div>
+          <div class="idef0-icom-hints">
+            <span class="hint-in">In: Diff</span>
+            <span class="hint-out">Out: Pass/Fail</span>
+          </div>
+        </div>
+
+        <!-- FB2 Connector: Tester <-> Reviewer -->
+        <div class="fb-connector" title="Feedback Loop 2 (Rev &harr; Dev)">
+          <div class="flow-arrow-svg">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="2" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+          </div>
+          <span class="fb-indicator-tag">FB2</span>
+        </div>
+
+        <!-- Node A4.2: Reviewer -->
+        <div class="pipeline-node idef0-box" id="node-reviewer" data-agent="reviewer">
+          <div class="idef0-box-header">
+            <span class="node-id">A4.2</span>
+            <span class="node-badge">Idle</span>
+          </div>
+          <div class="node-title">Reviewer</div>
+          <div class="node-role">Quality &amp; AST</div>
+          <div class="idef0-icom-hints">
+            <span class="hint-in">In: Code</span>
+            <span class="hint-out">Out: Approval</span>
+          </div>
+        </div>
+
+        <div class="flow-arrow-svg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="2" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+        </div>
+
+        <!-- Regression Gate G2 -->
+        <div class="pipeline-node gate-node idef0-box" id="node-regression_gate" data-agent="regression_gate">
+          <div class="idef0-box-header">
+            <span class="node-id">GATE 2</span>
+            <span class="node-badge">Ready</span>
+          </div>
+          <div class="node-title">Regression Gate</div>
+          <div class="node-role">0 Defect Rule</div>
+          <div class="idef0-icom-hints">
+            <span class="hint-ctrl">Ctrl: Invariant</span>
+          </div>
+        </div>
+
+        <div class="flow-arrow-svg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="2" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+        </div>
+
+        <!-- Node A5: DevOps -->
+        <div class="pipeline-node idef0-box" id="node-devops" data-agent="devops">
+          <div class="idef0-box-header">
+            <span class="node-id">A5</span>
+            <span class="node-badge">Idle</span>
+          </div>
+          <div class="node-title">DevOps</div>
+          <div class="node-role">PR Synthesis</div>
+          <div class="idef0-icom-hints">
+            <span class="hint-out">Out: PR &amp; Notes</span>
+          </div>
+        </div>
+
+        <!-- Right: Output Indicator -->
+        <div class="icom-port-right">
+          <div class="icom-arrow-right">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="0" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+          </div>
+          <div class="icom-tag">O</div>
+          <div class="icom-port-text">
+            <span>O1: Pull Request</span>
+            <span>O2: Audit Log</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom: Mechanisms (M) Bar -->
+      <div class="icom-bar icom-mechanisms-bar" id="node-orchestrator">
+        <div class="icom-label"><span class="icom-tag">M</span> MECHANISMS (Executing Agents &amp; Runtime Infrastructure)</div>
+        <div class="icom-items">
+          <span class="icom-badge">M1: LangGraph Pregel Graph (A6)</span>
+          <span class="icom-badge">M2: Disposable Git Sandbox</span>
+          <span class="icom-badge">M3: Pytest &amp; AST Analysis</span>
+          <span class="icom-badge">M4: Model Adapters (Claude / GPT-4o / Gemini)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Split Dashboard -->
+  <main class="dashboard-split">
+    <!-- Left: Live Audit Log -->
+    <section class="audit-panel">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <svg class="panel-title-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          <h2 class="panel-title">Audit Trail &amp; Telemetry Stream</h2>
+          <span class="event-count-badge" id="event-badge">0 events</span>
+        </div>
+        <div class="audit-filters">
+          <select id="agent-filter" class="filter-select">
+            <option value="ALL">All Nodes</option>
+            <option value="planner">A1 Planner</option>
+            <option value="architect">A2 Architect</option>
+            <option value="human_gate">Gate 1 Human Sign-Off</option>
+            <option value="developer">A3 Developer</option>
+            <option value="tester">A4.1 Tester</option>
+            <option value="reviewer">A4.2 Reviewer</option>
+            <option value="regression_gate">Gate 2 Regression</option>
+            <option value="devops">A5 DevOps</option>
+            <option value="orchestrator">A6 Orchestrator</option>
+          </select>
+          <label class="toggle-label">
+            <input type="checkbox" id="autoscroll-toggle" checked>
+            <span>Auto-scroll</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="event-feed" id="event-feed">
+        <div class="feed-empty">
+          <div class="empty-icon-wrap">
+            <svg class="empty-icon-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
+          </div>
+          <p>Ready to stream. Click <strong>Run Pipeline</strong> or <strong>Replay</strong> to inspect events.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Intelligence & Artifacts Panel -->
+    <section class="details-panel">
+      <!-- Apple Glass Tab Navigation Bar -->
+      <div class="tabs-header">
+        <button class="tab-btn active" data-tab="tab-pr">
+          <svg class="tab-svg" width="14" height="14" style="width:14px;height:14px;min-width:14px;min-height:14px;max-width:14px;max-height:14px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+          <span>Pull Request</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-plan">
+          <svg class="tab-svg" width="14" height="14" style="width:14px;height:14px;min-width:14px;min-height:14px;max-width:14px;max-height:14px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          <span>Plan &amp; Specs</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-escalation">
+          <svg class="tab-svg" width="14" height="14" style="width:14px;height:14px;min-width:14px;min-height:14px;max-width:14px;max-height:14px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Safety</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-replay">
+          <svg class="tab-svg" width="14" height="14" style="width:14px;height:14px;min-width:14px;min-height:14px;max-width:14px;max-height:14px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Replay</span>
+        </button>
+        <button class="tab-btn tab-highlight" data-tab="tab-leaderboard">
+          <svg class="tab-svg" width="14" height="14" style="width:14px;height:14px;min-width:14px;min-height:14px;max-width:14px;max-height:14px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1 .45-1 1v1h12v-1c0-.55-.45-1-1-1h-2c-.55 0-1-.45-1-1v-2.34"/><path d="M18 4H6v7a6 6 0 0 0 12 0V4z"/></svg>
+          <span>Leaderboard</span>
+        </button>
+        <button class="tab-btn tab-highlight" data-tab="tab-trajectory">
+          <svg class="tab-svg" width="14" height="14" style="width:14px;height:14px;min-width:14px;min-height:14px;max-width:14px;max-height:14px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Trajectory</span>
+        </button>
+        <button class="tab-btn tab-highlight" data-tab="tab-heatmap">
+          <svg class="tab-svg" width="14" height="14" style="width:14px;height:14px;min-width:14px;min-height:14px;max-width:14px;max-height:14px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Heatmap</span>
+        </button>
+        <button class="tab-btn tab-highlight" data-tab="tab-failures">
+          <svg class="tab-svg" width="14" height="14" style="width:14px;height:14px;min-width:14px;min-height:14px;max-width:14px;max-height:14px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Failures</span>
+        </button>
+        <button class="tab-btn tab-highlight" data-tab="tab-dataset">
+          <svg class="tab-svg" width="14" height="14" style="width:14px;height:14px;min-width:14px;min-height:14px;max-width:14px;max-height:14px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          <span>DatasetForge</span>
+        </button>
+        <!-- NEW DEDICATED DOCUMENTATION TAB -->
+        <button class="tab-btn tab-docs-btn" data-tab="tab-docs">
+          <svg class="tab-svg" width="14" height="14" style="width:14px;height:14px;min-width:14px;min-height:14px;max-width:14px;max-height:14px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <span>Docs &amp; Architecture</span>
+        </button>
+      </div>
+
+      <!-- Tab: Pull Request -->
+      <div class="tab-content active" id="tab-pr">
+        <div class="pr-card" id="pr-card">
+          <div class="pr-placeholder">
+            <svg class="placeholder-svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+            <p>No Pull Request created yet. Execute the multi-agent pipeline to inspect DevOps delivery artifacts and git patch diffs.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Plan & Specs -->
+      <div class="tab-content" id="tab-plan">
+        <div class="plan-card" id="plan-card">
+          <div class="plan-placeholder">
+            <svg class="placeholder-svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+            <p>Architectural breakdown and structured specifications will appear here dynamically as nodes A1 and A2 execute.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Escalation & Safety -->
+      <div class="tab-content" id="tab-escalation">
+        <div class="escalation-card" id="escalation-card">
+          <div class="clean-containment-badge">
+            <div class="containment-icon-wrap">
+              <svg class="containment-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h4>All Safety Boundaries Intact</h4>
+            <p>Zero containment breaches. If an adversarial task attempts unauthorized modifications to protected files (e.g. <code>legacy_billing.py</code>) or exceeds budget constraints, telemetry will flag and isolate the violation here.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Replay Scrubber -->
+      <div class="tab-content" id="tab-replay">
+        <div class="replay-controls-card">
+          <div class="timeline-header">
+            <h4>Audit Execution Timeline</h4>
+            <span id="scrubber-status">Step 0 / 0</span>
+          </div>
+          <div class="scrubber-container">
+            <input type="range" id="timeline-scrubber" min="0" max="0" value="0" class="slider">
+          </div>
+          <div class="scrubber-buttons">
+            <button id="btn-scrub-prev" class="btn btn-sm">
+              <svg class="btn-svg-sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 19 2 12 11 5 11 19"/><polygon points="22 19 13 12 22 5 22 19"/></svg>
+              <span>Prev</span>
+            </button>
+            <button id="btn-scrub-play" class="btn btn-sm btn-primary">
+              <svg class="btn-svg-sm" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Play</span>
+            </button>
+            <button id="btn-scrub-next" class="btn btn-sm">
+              <svg class="btn-svg-sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></svg>
+              <span>Next</span>
+            </button>
+            <button id="btn-scrub-reset" class="btn btn-sm btn-secondary">
+              <svg class="btn-svg-sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/></svg>
+              <span>Reset</span>
+            </button>
+          </div>
+          <div class="replay-detail" id="replay-step-info">
+            <p class="text-muted">Drag scrubber slider to step through state transitions.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Leaderboard -->
+      <div class="tab-content" id="tab-leaderboard">
+        <div class="lab-card">
+          <div class="lab-card-header">
+            <div>
+              <h3 class="lab-title">Model Leaderboard <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem; vertical-align: middle; padding: 2px 8px; border-radius: 4px; font-weight: 500;">Harness Validation Mode</span></h3>
+              <p class="lab-subtitle">Comparative evaluation on TerminalBench v1.0 (32 Tasks) &mdash; Baseline models are calibrated empirical simulations</p>
+            </div>
+            <button id="btn-refresh-leaderboard" class="btn btn-sm btn-secondary">
+              <svg class="btn-svg-sm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/></svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+          <div style="margin: 0.75rem 0 1rem 0; padding: 0.6rem 0.85rem; background: rgba(59, 130, 246, 0.08); border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.8rem; color: var(--text-color); line-height: 1.4;">
+            <strong>Methodology Note:</strong> External baseline personas (Claude 3.5 Sonnet, GPT-4o, Gemini 1.5 Pro) are <em>calibrated empirical simulations</em> validating AgentEval scoring, failure taxonomy ($F_{01}-F_{15}$), and containment without external API consumption. Live API execution is activated when respective provider keys are configured.
+          </div>
+          <div class="table-responsive">
+            <table class="lab-table" id="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Agent</th>
+                  <th>Provider</th>
+                  <th>Success</th>
+                  <th>Recovery</th>
+                  <th>Safety</th>
+                  <th>Quality</th>
+                  <th>Efficiency</th>
+                  <th>Runtime</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-body">
+                <tr><td colspan="9" class="text-center">Loading leaderboard...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="capability-matrix-section">
+            <h4 class="lab-subheading">Capability Radar Breakdown (%)</h4>
+            <div class="capability-grid" id="capability-grid">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Trajectory Viewer -->
+      <div class="tab-content" id="tab-trajectory">
+        <div class="lab-card">
+          <div class="lab-card-header">
+            <div>
+              <h3 class="lab-title">Agent Trajectory Telemetry</h3>
+              <p class="lab-subtitle">Step-by-step reasoning, terminal execution traces, and recovery episodes</p>
+            </div>
+            <div class="trajectory-badge" id="trajectory-meta">Run: demo &bull; 9 Steps</div>
+          </div>
+          <div class="trajectory-timeline" id="trajectory-timeline">
+            <!-- Dynamically populated -->
+          </div>
+          <div class="trajectory-inspector" id="trajectory-inspector">
+            <h4>Step Payload Inspection</h4>
+            <div id="inspector-content" class="code-box">Click any trajectory step above to inspect event payloads, exit codes, and AST diffs.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Heatmap -->
+      <div class="tab-content" id="tab-heatmap">
+        <div class="lab-card">
+          <div class="lab-card-header">
+            <div>
+              <h3 class="lab-title">Model &times; Task Matrix</h3>
+              <p class="lab-subtitle">Deterministic pass/fail results across all 32 benchmark challenges</p>
+            </div>
+            <div class="heatmap-legend">
+              <span class="chip-pass">PASS</span>
+              <span class="chip-fail">FAIL</span>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="lab-table heatmap-table" id="heatmap-table">
+              <thead>
+                <tr>
+                  <th>Task ID</th>
+                  <th>Title</th>
+                  <th>Domain</th>
+                  <th>Diff</th>
+                  <th>MA-SET</th>
+                  <th>Claude 3.5</th>
+                  <th>GPT-4o</th>
+                  <th>Gemini 1.5</th>
+                  <th>Stub</th>
+                </tr>
+              </thead>
+              <tbody id="heatmap-body">
+                <tr><td colspan="9" class="text-center">Loading heatmap...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Failure Taxonomy Analysis -->
+      <div class="tab-content" id="tab-failures">
+        <div class="lab-card">
+          <div class="lab-card-header">
+            <div>
+              <h3 class="lab-title">Failure Taxonomy Analytics (F01–F15)</h3>
+              <p class="lab-subtitle">Empirical categorization of agent failure modes across all 128 benchmark evaluations</p>
+            </div>
+            <span class="badge-accent" id="failures-total-badge">Total Analyzed: 25</span>
+          </div>
+          <div class="failures-grid" id="failures-grid">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div class="lab-card-header" style="margin-top: 2.5rem;">
+            <div>
+              <h3 class="lab-title">Cross-Model Vulnerability Breakdown</h3>
+              <p class="lab-subtitle">Comparative distribution answering: <em>Why did Agent X fail?</em></p>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="lab-table" id="failures-cross-table">
+              <thead>
+                <tr>
+                  <th>Failure Category</th>
+                  <th>Claude 3.5</th>
+                  <th>GPT-4o</th>
+                  <th>Gemini 1.5</th>
+                  <th>MA-SET Team</th>
+                  <th>Primary Vulnerability</th>
+                </tr>
+              </thead>
+              <tbody id="failures-cross-body">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: DatasetForge Health -->
+      <div class="tab-content" id="tab-dataset">
+        <div class="lab-card">
+          <div class="lab-card-header">
+            <div>
+              <h3 class="lab-title">DatasetForge Suite Health (v1.0)</h3>
+              <p class="lab-subtitle">32 calibrated real-world tasks with 100% golden solution verification</p>
+            </div>
+            <span class="badge-accent">32 Verified Tasks</span>
+          </div>
+          <div class="dataset-stats-grid">
+            <div class="stat-box">
+              <div class="stat-number" id="ds-total-tasks">32</div>
+              <div class="stat-label">Verified Tasks</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="ds-avg-difficulty">2.59</div>
+              <div class="stat-label">Avg Difficulty (1-5)</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number">100%</div>
+              <div class="stat-label">Golden Pass Rate</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number">0.0%</div>
+              <div class="stat-label">Duplicate Ratio</div>
+            </div>
+          </div>
+          <div class="dataset-breakdown-row">
+            <div class="chart-box">
+              <h4>Difficulty Distribution</h4>
+              <div class="bar-chart-container" id="difficulty-bar-chart"></div>
+            </div>
+            <div class="chart-box">
+              <h4>Task Taxonomy Distribution</h4>
+              <div class="bar-chart-container" id="taxonomy-bar-chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BRAND NEW TAB: Documentation & How We Built It -->
+      <div class="tab-content" id="tab-docs">
+        <div class="docs-container">
+          <!-- Docs Header -->
+          <div class="docs-hero">
+            <div class="docs-tag">ARCHITECTURE &bull; RESEARCH &bull; METHODOLOGY</div>
+            <h2 class="docs-title">How We Built MA-SET Lab 2.0</h2>
+            <p class="docs-subtitle">
+              The systems engineering blueprint behind our multi-agent software engineering team, disposable git sandbox containment, dual-loop self-repair, and frontier evaluation harness.
+            </p>
+          </div>
+
+          <!-- Documentation Table of Contents / Quick Jump -->
+          <div class="docs-quick-nav">
+            <a href="#doc-section-philosophy" class="docs-nav-chip">1. IDEF0 Systems Engineering</a>
+            <a href="#doc-section-orchestration" class="docs-nav-chip">2. LangGraph Pregel Engine</a>
+            <a href="#doc-section-containment" class="docs-nav-chip">3. Sandbox &amp; PathFilter</a>
+            <a href="#doc-section-recovery" class="docs-nav-chip">4. Dual-Loop Self-Repair (FB1/FB2)</a>
+            <a href="#doc-section-benchmark" class="docs-nav-chip">5. TerminalBench &amp; AgentEval</a>
+            <a href="#doc-section-report" class="docs-nav-chip">6. Empirical Findings Report</a>
+            <a href="#doc-section-repro" class="docs-nav-chip">7. Exact CLI Reproduction</a>
+          </div>
+
+          <!-- Chapter 1: IDEF0 Systems Engineering -->
+          <article class="docs-article" id="doc-section-philosophy">
+            <div class="article-badge">CHAPTER 01</div>
+            <h3>Why IDEF0 Systems Engineering?</h3>
+            <p>
+              Most autonomous coding agents fail in production not because LLMs lack programming intelligence, but because unconstrained multi-agent loops collapse into chaotic feedback drift: repeating tool errors, generating hallucinated APIs, modifying out-of-scope files, or over-engineering simple bug fixes.
+            </p>
+            <p>
+              To solve this, MA-SET adopts the aerospace-grade <strong>IDEF0 (Integration Definition for Function Modeling)</strong> methodology. In IDEF0, every engineering activity is an invariant Function Block governed by four cardinal vectors (ICOM):
+            </p>
+            <div class="icom-spec-grid">
+              <div class="icom-spec-card">
+                <div class="icom-spec-tag icom-c">C &bull; CONTROLS (Top)</div>
+                <p>Governing constraints that dictate <em>how and when</em> an agent may operate: Protected PathFilter policies (e.g. <code>legacy_billing.py</code> is strictly immutable), strict LLM budget ceilings (20 calls max), and mandatory Human-in-the-Loop impact sign-offs.</p>
+              </div>
+              <div class="icom-spec-card">
+                <div class="icom-spec-tag icom-i">I &bull; INPUTS (Left)</div>
+                <p>Artifacts transformed by the function: Requirements tickets (YAML/GitHub), raw source repository snapshots, pytest failure stack traces, and code reviewer critiques.</p>
+              </div>
+              <div class="icom-spec-card">
+                <div class="icom-spec-tag icom-o">O &bull; OUTPUTS (Right)</div>
+                <p>Deliverables synthesized by the function: Decomposed execution specs, clean git patch diffs, automated pull requests with release notes, and append-only JSONL telemetry trails.</p>
+              </div>
+              <div class="icom-spec-card">
+                <div class="icom-spec-tag icom-m">M &bull; MECHANISMS (Bottom)</div>
+                <p>The executors supporting the function: Frontier LLM adapters (Claude 3.5 Sonnet, GPT-4o, Gemini 1.5 Pro), disposable sandboxed git environments, AST parsers, and the LangGraph Pregel state graph.</p>
+              </div>
+            </div>
+          </article>
+
+          <!-- Chapter 2: LangGraph Pregel Engine -->
+          <article class="docs-article" id="doc-section-orchestration">
+            <div class="article-badge">CHAPTER 02</div>
+            <h3>The Orchestration Core: LangGraph Pregel Graph</h3>
+            <p>
+              MA-SET is implemented as a cyclic directed state graph using LangGraph's Pregel execution framework. Unlike linear chain-of-thought, MA-SET persists an immutable state record across seven specialized agent nodes:
+            </p>
+            <ul class="docs-feature-list">
+              <li><strong>Node A1 (Planner)</strong>: Evaluates tickets, extracts acceptance criteria, checks priority, and decomposes complex feature requests into atomic engineering milestones.</li>
+              <li><strong>Node A2 (Architect)</strong>: Analyzes repository dependency graphs, detects potential side-effects, and generates precise architectural specs.</li>
+              <li><strong>Gate 1 (Human-in-the-Loop Gate)</strong>: Asynchronous governance checkpoint where engineers can approve, reject, or inject modifications before developer agents execute arbitrary file mutations.</li>
+              <li><strong>Node A3 (Developer)</strong>: Operates strictly within an isolated sandbox to write code, patch regressions, and implement features according to spec.</li>
+              <li><strong>Node A4.1 (Tester)</strong>: Executes automated pytest suites in disposable environments, capturing real exit codes and traceback telemetry.</li>
+              <li><strong>Node A4.2 (Reviewer)</strong>: Audits code quality, style guidelines, and AST structure. Rejects overengineered or insecure solutions.</li>
+              <li><strong>Gate 2 (Zero-Defect Regression Gate)</strong>: Hard automated barrier. If any pre-existing unit test breaks, the pipeline rejects the patch immediately.</li>
+              <li><strong>Node A5 (DevOps)</strong>: Commits verified patches to isolated branches, authors pull requests with release notes, and reports completion.</li>
+            </ul>
+          </article>
+
+          <!-- Chapter 3: Disposable Sandbox & Containment -->
+          <article class="docs-article" id="doc-section-containment">
+            <div class="article-badge">CHAPTER 03</div>
+            <h3>Disposable Git Sandbox &amp; PathFilter Containment</h3>
+            <p>
+              Security and environmental purity are paramount. Every agent run executes in an ephemeral, disposable workspace initialized on-the-fly:
+            </p>
+            <div class="code-block-container">
+              <pre><code># Sandbox Lifecycle Guarantee:
+1. Temporary directory created (/tmp/maset_sandbox_xyz)
+2. Target project cloned without .git pollution
+3. Fresh git repository initialized (git init, git add, git commit -m "Baseline")
+4. PathFilter active: Intercepts all file mutations against protected invariants
+5. Ephemeral workspace automatically cleaned up on exit</code></pre>
+            </div>
+            <p>
+              Any attempt by an LLM to modify protected files (such as <code>legacy_billing.py</code>, <code>.env</code>, or root security configs) is immediately intercepted by the <code>PathFilter</code> before touching disk, logging an immutable <code>FILE_WRITE_BLOCKED</code> audit event.
+            </p>
+          </article>
+
+          <!-- Chapter 4: Dual-Loop Self-Healing Dynamics -->
+          <article class="docs-article" id="doc-section-recovery">
+            <div class="article-badge">CHAPTER 04</div>
+            <h3>Dual-Loop Self-Healing: FB1 &amp; FB2 Recovery Dynamics</h3>
+            <p>
+              Frontier models frequently write code with subtle syntax slips or off-by-one errors on their initial pass. MA-SET utilizes a dual-nested feedback loop architecture to automatically recover without human intervention:
+            </p>
+            <div class="recovery-flow-grid">
+              <div class="recovery-flow-card">
+                <h4>FB1: Developer &harr; Tester Loop</h4>
+                <p>When pytest fails, the Tester extracts the failing assertion and traceback, feeding it directly back to the Developer. The Developer enters a <code>RECOVERY_STARTED</code> episode, analyzes the error, and iterates (capped at 3 retries) until the test suite passes.</p>
+              </div>
+              <div class="recovery-flow-card">
+                <h4>FB2: Reviewer &harr; Developer Loop</h4>
+                <p>Even if tests pass, the Reviewer inspects AST diffs for code bloat, security antipatterns, or style regressions. If rejected, constructive feedback triggers an architectural refinement loop back to the Developer.</p>
+              </div>
+            </div>
+          </article>
+
+          <!-- Chapter 5: TerminalBench & AgentEval Research Layer -->
+          <article class="docs-article" id="doc-section-benchmark">
+            <div class="article-badge">CHAPTER 05</div>
+            <h3>TerminalBench v1.0 &amp; Deterministic AgentEval</h3>
+            <p>
+              To scientifically evaluate agent performance, MA-SET Lab 2.0 provides <strong>TerminalBench</strong>: 32 curated real-world software engineering challenges across 6 functional domains:
+            </p>
+            <div class="table-responsive">
+              <table class="lab-table">
+                <thead>
+                  <tr>
+                    <th>Domain</th>
+                    <th>Task Range</th>
+                    <th>Count</th>
+                    <th>Core Focus</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Web &amp; API</td><td>BENCH-001 &ndash; 006</td><td>6 Tasks</td><td>FastAPI/Flask validation, auth token security, pagination</td></tr>
+                  <tr><td>Data &amp; CLI</td><td>BENCH-007 &ndash; 012</td><td>6 Tasks</td><td>Data munging, streaming parsers, CLI edge cases</td></tr>
+                  <tr><td>Systems &amp; Network</td><td>BENCH-013 &ndash; 018</td><td>6 Tasks</td><td>Socket buffers, retry backoff, concurrent file locks</td></tr>
+                  <tr><td>Algorithms</td><td>BENCH-019 &ndash; 024</td><td>6 Tasks</td><td>LRU cache eviction, interval trees, topological sorts</td></tr>
+                  <tr><td>Security &amp; Safety</td><td>BENCH-025 &ndash; 028</td><td>4 Tasks</td><td>Protected file traps, SQL injection, path traversal</td></tr>
+                  <tr><td>Refactoring</td><td>BENCH-029 &ndash; 032</td><td>4 Tasks</td><td>Legacy cleanup, typing enforcement, zero regressions</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top: 1.5rem;">
+              <strong>Zero-LLM Deterministic Grading:</strong> Evaluator decisions rely 100% on exit codes, git diff inspection, AST parsing, and pytest assertions. Zero reliance on non-deterministic LLM-as-a-judge. Validated across 100% golden solution pass rates and 100% negative solution rejection rates.
+            </p>
+          </article>
+
+          <!-- Chapter 6: Empirical Findings Live Reader -->
+          <article class="docs-article" id="doc-section-report">
+            <div class="article-badge">CHAPTER 06</div>
+            <h3>Empirical Findings: Competitive Model Benchmark</h3>
+            <p>
+              Summary of results from our 128-run competitive evaluation across all four frontier agent configurations on TerminalBench v1.0:
+            </p>
+            <div class="report-summary-box">
+              <div class="report-stat-row">
+                <div class="rep-stat">
+                  <span class="rep-num">75.0%</span>
+                  <span class="rep-lbl">MA-SET Team Pass Rate (24/32)</span>
+                </div>
+                <div class="rep-stat">
+                  <span class="rep-num">75.0%</span>
+                  <span class="rep-lbl">GPT-4o Pass Rate (24/32)</span>
+                </div>
+                <div class="rep-stat">
+                  <span class="rep-num">68.8%</span>
+                  <span class="rep-lbl">Claude 3.5 Sonnet Pass Rate (22/32)</span>
+                </div>
+                <div class="rep-stat">
+                  <span class="rep-num">68.8%</span>
+                  <span class="rep-lbl">Gemini 1.5 Pro Pass Rate (22/32)</span>
+                </div>
+              </div>
+            </div>
+            <div class="live-report-viewer-card">
+              <div class="live-report-header">
+                <div class="live-report-title">
+                  <svg class="tab-svg" width="14" height="14" style="width:14px;height:14px;min-width:14px;min-height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <span>Live Research Report (docs/research-report-v1.1.md)</span>
+                </div>
+                <button id="btn-reload-report" class="btn btn-sm btn-secondary">Reload Report</button>
+              </div>
+              <div class="live-report-content code-box" id="docs-live-report-body">
+                Loading live research report markdown...
+              </div>
+            </div>
+          </article>
+
+          <!-- Chapter 7: Exact CLI Reproduction -->
+          <article class="docs-article" id="doc-section-repro">
+            <div class="article-badge">CHAPTER 07</div>
+            <h3>Exact Reproduction Commands</h3>
+            <p>
+              Every experiment and evaluation in MA-SET Lab 2.0 is fully reproducible via the CLI:
+            </p>
+            <div class="repro-cmd-card">
+              <div class="repro-header">
+                <span>1. Run Competitive Benchmark Across All 4 Agents (128 Runs)</span>
+                <button class="btn-copy" data-copy="python -m ma_set.cli benchmark-compare --dataset datasets/v1.0 --agents maset_team,claude,gpt,gemini --limit 32 -o docs/research-report-v1.1.md">Copy</button>
+              </div>
+              <pre><code>python -m ma_set.cli benchmark-compare \
+  --dataset datasets/v1.0 \
+  --agents maset_team,claude,gpt,gemini \
+  --limit 32 \
+  -o docs/research-report-v1.1.md</code></pre>
+            </div>
+
+            <div class="repro-cmd-card">
+              <div class="repro-header">
+                <span>2. Evaluate Single Task with Specific Model Adapter</span>
+                <button class="btn-copy" data-copy="python -m ma_set.cli evaluate --task BENCH-001 --agent maset_team">Copy</button>
+              </div>
+              <pre><code>python -m ma_set.cli evaluate --task BENCH-001 --agent maset_team</code></pre>
+            </div>
+
+            <div class="repro-cmd-card">
+              <div class="repro-header">
+                <span>3. Verify Evaluator Discrimination Test Suite</span>
+                <button class="btn-copy" data-copy="pytest tests/test_evaluator_discrimination.py -v">Copy</button>
+              </div>
+              <pre><code>pytest tests/test_evaluator_discrimination.py -v</code></pre>
+            </div>
+
+            <div class="repro-cmd-card">
+              <div class="repro-header">
+                <span>4. Launch Dashboard &amp; Visualizer</span>
+                <button class="btn-copy" data-copy="python -m ma_set.cli serve --port 8765">Copy</button>
+              </div>
+              <pre><code>python -m ma_set.cli serve --port 8765</code></pre>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Apple Minimalist Footer -->
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <span>MA-SET Lab 2.0 &bull; Multi-Agent Systems Engineering &amp; Research</span>
+      <span class="footer-links">
+        <a href="/api/health" target="_blank">Health</a> &bull;
+        <a href="/api/runs" target="_blank">Runs API</a> &bull;
+        <a href="/api/lab/leaderboard" target="_blank">Leaderboard API</a> &bull;
+        <a href="/api/lab/report" target="_blank">Research Report</a>
+      </span>
+    </div>
+  </footer>
+
+  <script src="/static/app.js?v=2.7"></script>
+</body>
+</html>
